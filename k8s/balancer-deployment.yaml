@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.22.0 (955b78124)
+  name: balancer
+  labels:
+    io.kompose.service: balancer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: balancer
+  strategy:
+    type: Recreate
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.22.0 (955b78124)
+      labels:
+        io.kompose.service: balancer
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  io.kompose.service: balancer
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - image: gcr.io/agisit-2425-website-1112951/balancer:latest
+          name: balancer
+          ports:
+            - containerPort: 80
+          resources: {}
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /sys/fs/cgroup
+              name: balancer-claim0
+            - mountPath: /home/root/tools
+              name: balancer-claim1
+            - mountPath: /home/root/hosts_ssh.sh
+              name: balancer-claim2
+      hostname: balancer
+      restartPolicy: Always
+      volumes:
+        - name: balancer-claim0
+          persistentVolumeClaim:
+            claimName: balancer-claim0
+        - name: balancer-claim1
+          persistentVolumeClaim:
+            claimName: balancer-claim1
+        - name: balancer-claim2
+          persistentVolumeClaim:
+            claimName: balancer-claim2

@@ -1,0 +1,23 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus-access
+rules:
+- apiGroups: [""]
+  resources: ["services", "endpoints", "pods"]
+  verbs: ["get", "list", "watch"]
+
+---
+
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus-access-binding
+subjects:
+- kind: ServiceAccount
+  name: default  # Your ServiceAccount (default in this case)
+  namespace: default  # Your namespace (default in this case)
+roleRef:
+  kind: ClusterRole
+  name: prometheus-access  # This is the ClusterRole you just created
+  apiGroup: rbac.authorization.k8s.io

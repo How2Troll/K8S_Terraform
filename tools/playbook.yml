@@ -1,0 +1,92 @@
+---
+- hosts: all
+  become: yes
+  become_method: sudo
+  gather_facts: yes
+  vars:
+    noc_ntpserver: 0.europe.pool.ntp.org
+
+  tasks:
+    - name: Install ntp
+      apt:
+        name: ntp
+        state: present
+        update_cache: yes
+
+    - name: Write ntp.conf
+      template:
+        src: /home/root/tools/files/ntp.conf.j2
+        dest: /etc/ntp.conf
+        mode: "0644"
+        owner: root
+        group: root
+      notify: restart ntp
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+        update_cache: yes
+
+    - name: Write Nginx reverse proxy configuration
+      copy:
+        content: |
+          server {
+              listen 80;
+
+              location /user {
+                  proxy_pass http://user-service:8080;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+
+              location /auth {
+                  proxy_pass http://auth-service:8081;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+
+              location /calendar {
+                  proxy_pass http://calendar-service:8082;
+                  proxy_set_header Host $host;
+                  proxy_set_header X-Real-IP $remote_addr;
+                  proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                  proxy_set_header X-Forwarded-Proto $scheme;
+              }
+          }
+        dest: /etc/nginx/sites-available/reverse-proxy
+        mode: "0644"
+        owner: root
+        group: root
+      notify: restart nginx
+
+    - name: Enable Nginx reverse proxy configuration
+      file:
+        src: /etc/nginx/sites-available/reverse-proxy
+        dest: /etc/nginx/sites-enabled/reverse-proxy
+        state: link
+
+    - name: Remove default Nginx configuration
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+
+    - name: Start Nginx
+      service:
+        name: nginx
+        state: started
+
+  handlers:
+    - name: restart ntp
+      service:
+        name: ntp
+        state: restarted
+
+    - name: restart nginx
+      service:
+        name: nginx
+        state: restarted

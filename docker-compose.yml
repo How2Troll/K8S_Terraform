@@ -1,0 +1,66 @@
+version: '3'
+
+services:
+  mysql:
+    build:
+      context: ./mysql
+    container_name: calendar-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: calendar_db
+      MYSQL_USER: calendar_user
+      MYSQL_PASSWORD: '4X+8a?qo4uLc'
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: [ "CMD-SHELL", "mysql -h localhost -u root -proot -e 'SELECT 1;' || exit 1" ]
+      interval: 20s
+      timeout: 10s
+      retries: 5
+
+  user-service:
+    build:
+      context: .
+      dockerfile: ./user-service/Dockerfile
+    ports:
+      - "8080:8080"
+
+  auth-service:
+    build:
+      context: .
+      dockerfile: ./auth-service/Dockerfile
+    ports:
+      - "8081:8081"
+
+  calendar-service:
+    build:
+      context: .
+      dockerfile: ./calendar-service/Dockerfile
+    ports:
+      - "8082:8082"
+
+  mgmt:
+    image: rofrano/vagrant-provider:ubuntu
+    container_name: mgmt
+    hostname: mgmt
+    privileged: true
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:rw"
+      - ./tools:/home/root/tools
+      - ./bootstrap.sh:/home/root/bootstrap.sh
+      - ./hosts_ip.sh:/home/root/hosts_ip.sh
+      - ./hosts_ssh.sh:/home/root/hosts_ssh.sh
+    command: bash -c "/home/root/bootstrap.sh && /home/root/hosts_ip.sh && /home/root/hosts_ssh.sh && sleep infinity"
+
+  balancer:
+    build:
+      context: ./balancer
+    container_name: balancer
+    hostname: balancer
+    privileged: true
+    volumes:
+      - "/sys/fs/cgroup:/sys/fs/cgroup:rw"
+      - ./tools:/home/root/tools
+      - ./hosts_ssh.sh:/home/root/hosts_ssh.sh
+    ports:
+      - "8083:80"

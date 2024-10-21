@@ -1,0 +1,59 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.22.0 (955b78124)
+  name: mysql
+  labels:
+    io.kompose.service: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: mysql
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.22.0 (955b78124)
+      labels:
+        io.kompose.service: mysql
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  io.kompose.service: mysql
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - env:
+            - name: MYSQL_DATABASE
+              value: calendar_db
+            - name: MYSQL_PASSWORD
+              value: 4X+8a?qo4uLc
+            - name: MYSQL_ROOT_PASSWORD
+              value: root
+            - name: MYSQL_USER
+              value: calendar_user
+          image: gcr.io/agisit-2425-website-1112951/mysql:latest
+          livenessProbe:
+            exec:
+              command:
+                - /usr/bin/mysql
+                - -h
+                - "localhost"
+                - -u
+                - "root"
+                - -proot
+                - -e
+                - "SELECT 1;"
+            initialDelaySeconds: 30  # Adjust if necessary
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 5
+          name: calendar-db
+          ports:
+            - containerPort: 3306
+      restartPolicy: Always

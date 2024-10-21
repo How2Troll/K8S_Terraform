@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    kompose.cmd: kompose convert
+    kompose.version: 1.22.0 (955b78124)
+  name: auth-service
+  labels:
+    io.kompose.service: auth-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      io.kompose.service: auth-service
+  template:
+    metadata:
+      annotations:
+        kompose.cmd: kompose convert
+        kompose.version: 1.22.0 (955b78124)
+      labels:
+        io.kompose.service: auth-service
+    spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - labelSelector:
+                matchLabels:
+                  io.kompose.service: auth-service
+              topologyKey: "kubernetes.io/hostname"
+      containers:
+        - image: gcr.io/agisit-2425-website-1112951/auth-service:latest
+          name: auth-service
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8081
+          resources: {}
+      restartPolicy: Always

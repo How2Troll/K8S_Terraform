@@ -1,0 +1,7 @@
+gcloud container clusters get-credentials calendar --zone europe-west6-a --project agisit-2425-website-1112951
+kubectl apply -f .
+kubectl delete pods --all
+kubectl delete all --all
+
+docker build -f Dockerfile -t gcr.io/agisit-2425-website-1112951/balancer .
+docker push gcr.io/agisit-2425-website-1112951/balancer
